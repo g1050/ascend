@@ -167,7 +167,7 @@ void Model::BuildNodeVariantPack(int nodeId)
     for (size_t i = 0; i < node.outTensors_.size(); ++i) {
         node.variantPack_.outTensors.at(i) = *node.outTensors_.at(i);
         if (node.outTensorTypes_.at(i) == TensorType::INTERNAL_TENSOR) {
-            // 创建输出tensor的空间
+            // 对于Internal类型的输出，需要创建输出tensor的空间
             CreateTensorFromDesc(node.variantPack_.outTensors.at(i), outTensorDescs.at(i));
             *node.outTensors_.at(i) = node.variantPack_.outTensors.at(i);
         }

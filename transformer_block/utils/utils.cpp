@@ -7,14 +7,22 @@ void CreateInTensorDescs(atb::SVector<atb::TensorDesc> &intensorDescs)
     {
         intensorDescs.at(i).dtype = ACL_FLOAT16;
         intensorDescs.at(i).format = ACL_FORMAT_ND;
-        if(i == 0){
+        if(i == 0){ //x
             intensorDescs.at(i).shape.dimNum = 3;
             intensorDescs.at(i).shape.dims[0] = 1;
             intensorDescs.at(i).shape.dims[1] = 197;
             intensorDescs.at(i).shape.dims[2] = 768;
-        }else{
+        }else if(i==1 || i == 2){ // α || β
             intensorDescs.at(i).shape.dimNum = 1;
             intensorDescs.at(i).shape.dims[0] = 768;
+        }else if(i == 3){ // weight
+            intensorDescs.at(i).shape.dimNum = 2;
+            intensorDescs.at(i).shape.dims[0] = 768;
+            intensorDescs.at(i).shape.dims[1] = 2304;
+        }else if(i == 4){ // bias
+            intensorDescs.at(i).shape.dimNum = 2;
+            intensorDescs.at(i).shape.dims[0] = 1; // batch
+            intensorDescs.at(i).shape.dims[1] = 2304;
         }
 
     }

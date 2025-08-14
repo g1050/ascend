@@ -8,15 +8,10 @@ atb::Status CreateGraphOperationLN(atb::Operation **operation)
     // 计算公式：(a+b) + (c+d)
     // 输入是4个参数，输出是1个参数，有3个add算子，中间产生的临时输出是2个
     atb::GraphParam opGraph;
-    opGraph.inTensorNum = 3; // 输入的tensor数量
+    opGraph.inTensorNum = 5; // 输入的tensor数量
     opGraph.outTensorNum = 1; // 输出的tensor数量
-    opGraph.internalTensorNum = 0; // 中间产生的临时输出tensor数量
-    opGraph.nodes.resize(1); // 图算子包含的节点数量
-
-    // opGraph.inTensorNum = 4; // 输入的tensor数量
-    // opGraph.outTensorNum = 1; // 输出的tensor数量
-    // opGraph.internalTensorNum = 2; // 中间产生的临时输出tensor数量
-    // opGraph.nodes.resize(3); // 图算子包含的节点数量
+    opGraph.internalTensorNum = 1; // 中间产生的临时输出tensor数量
+    opGraph.nodes.resize(2); // 图算子包含的节点数量
 
     // 普通枚举，可以直接使用
     enum InTensorId
@@ -24,13 +19,16 @@ atb::Status CreateGraphOperationLN(atb::Operation **operation)
         IN_TENSOR_X = 0,
         IN_TENSOR_GAMMA,
         IN_TENSOR_BETA,
-        OUT_TENSOR,
+        IN_TENSOR_MATMUL_WEIGHT,
+        IN_TENSOR_MATMUL_BIAS,
+        OUT_TENSOR_LN,
+        OUT_TENSOR_LN_MATMUL,
     };
 
     size_t nodeId = 0;
     atb::Node &layerNode = opGraph.nodes.at(nodeId++);
-    // atb::Node &addNode2 = opGraph.nodes.at(nodeId++);
-    // atb::Node &addNode3 = opGraph.nodes.at(nodeId++);
+    atb::Node &matmulNode = opGraph.nodes.at(nodeId++);
+    // atb::Node &addNode = opGraph.nodes.at(nodeId++);
 
     atb::infer::LayerNormParam layerNormParam;
     const int32_t BEGIN_NORM_AXIS = 2;
@@ -39,17 +37,23 @@ atb::Status CreateGraphOperationLN(atb::Operation **operation)
     auto status = atb::CreateOperation(layerNormParam,&layerNode.operation);
     CHECK_RET(status, "addParam CreateOperation failed. status: " + std::to_string(status));
     layerNode.inTensorIds = {IN_TENSOR_X,IN_TENSOR_GAMMA,IN_TENSOR_BETA};
-    layerNode.outTensorIds = {OUT_TENSOR};
+    layerNode.outTensorIds = {OUT_TENSOR_LN};
 
-    // // 创建node:(a+b)
-    // // atb用来创建operation,operation可以组成graph
-    // atb::infer::ElewiseParam addParam;
-    // addParam.elewiseType = atb::infer::ElewiseParam::ElewiseType::ELEWISE_ADD;
-    // // 创建operation需要两个参数，参数和operation二级指针
-    // auto status = atb::CreateOperation(addParam, &addNode.operation); // 每个node需要配置单算子对象实例
-    // CHECK_RET(status, "addParam CreateOperation failed. status: " + std::to_string(status));
-    // addNode.inTensorIds = {IN_TENSOR_A, IN_TENSOR_B}; // 每个node需要配置输入的tensor id
-    // addNode.outTensorIds = {ADD1_OUT}; // 每个node需要配置输出的tensor id
+    // 创建node:(a+b)
+    // atb用来创建operation,operation可以组成graph
+    atb::infer::LinearParam param;
+    param.transposeA = false;
+    param.transposeB = false;
+    param.hasBias = true;
+    param.outDataType = aclDataType::ACL_DT_UNDEFINED;
+    param.enAccum = false;
+    param.matmulType = atb::infer::LinearParam::MatmulType::MATMUL_UNDEFINED;
+    param.quantMode = atb::infer::LinearParam::QuantMode::QUANT_UNDEFINED;
+    // 创建operation需要两个参数，参数和operation二级指针
+    status = atb::CreateOperation(param, &matmulNode.operation); // 每个node需要配置单算子对象实例
+    CHECK_RET(status, "matmulParam CreateOperation failed. status: " + std::to_string(status));
+    matmulNode.inTensorIds = {OUT_TENSOR_LN, IN_TENSOR_MATMUL_WEIGHT, IN_TENSOR_MATMUL_BIAS}; // 每个node需要配置输入的tensor id
+    matmulNode.outTensorIds = {OUT_TENSOR_LN_MATMUL}; // 每个node需要配置输出的tensor id
 
     // 创建node:(c+d)
     // atb::infer::ElewiseParam addParam2;
@@ -68,9 +72,8 @@ atb::Status CreateGraphOperationLN(atb::Operation **operation)
     // addNode3.outTensorIds = {ADD3_OUT};
 
     // 将graph添加到混合模型中
-    LOG_ERROR("完成创建(layerNorm)的图");
     status = atb::CreateOperation(opGraph, operation);
     CHECK_RET(status, "GraphParam CreateOperation failed. status: " + std::to_string(status));
-    LOG_ERROR("完成创建(layerNorm)的图");
+    LOG_ERROR("完成创建(layerNorm)的图，图包含的节点数量：" + std::to_string(opGraph.nodes.size()));
     return atb::NO_ERROR;
 }

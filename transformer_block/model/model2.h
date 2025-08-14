@@ -55,6 +55,8 @@ public:
         IN_TENSOR_X = 0,
         IN_TENSOR_GAMMA,
         IN_TENSOR_BETA,
+        IN_TENSOR_MATMUL_WEIGHT,
+        IN_TENSOR_MATMUL_BIAS,
         Mode_INPUT_SIZE,     // 输入张量总数
     };
 
@@ -64,7 +66,7 @@ public:
      */
     enum OutTensorId : int
     {
-        GLUE_OUT = 0,       // 输出张量（粘合输出）
+        OUT_TENSOR_LN_MATMUL=0,
         Mode_OUTPUT_SIZE,    // 输出张量总数
     };
 

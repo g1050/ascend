@@ -63,7 +63,8 @@ void Model2::CreateGraphOpLayer(size_t nodeId)
     graph_node.inTensors_.at(layerInTensorId++) = &model_inTensors_.at(IN_TENSOR_X);
     graph_node.inTensors_.at(layerInTensorId++) = &model_inTensors_.at(IN_TENSOR_GAMMA);
     graph_node.inTensors_.at(layerInTensorId++) = &model_inTensors_.at(IN_TENSOR_BETA);
-    // graph_node.inTensors_.at(layerInTensorId++) = &model_inTensors_.at(IN_TENSOR_D);
+    graph_node.inTensors_.at(layerInTensorId++) = &model_inTensors_.at(IN_TENSOR_MATMUL_WEIGHT);
+    graph_node.inTensors_.at(layerInTensorId++) = &model_inTensors_.at(IN_TENSOR_MATMUL_BIAS);
 
     // 设置图算子node节点的输出，因为只有一个中间节点
     // outTensor直接赋值
@@ -124,7 +125,16 @@ atb::Status Model2::InferShape(const atb::SVector<atb::TensorDesc> &inTensorDesc
                               atb::SVector<atb::TensorDesc> &outTensorDescs)
 {
     // 输出的shape和输入时相同的。取第一个的输入即可
-    outTensorDescs.at(0) = model_inTensors_.at(0).desc;
+    // outTensorDescs.at(0) = model_inTensors_.at(4).desc;
+    outTensorDescs.at(0).shape.dimNum = 3;
+    outTensorDescs.at(0).shape.dims[0] = 1; // batch
+    outTensorDescs.at(0).shape.dims[1] = 197; // batch
+    outTensorDescs.at(0).shape.dims[2] = 2304;
+    // 输出模型的shape,todo: 动态计算
+    // outTensorDescs.at(i).shape.dimNum = 3;
+    // outTensorDescs.at(i).shape.dims[0] = 1;
+    // outTensorDescs.at(i).shape.dims[1] = 2304;
+    // outTensorDescs.at(i).shape.dims[2] = 2304;
     return atb::NO_ERROR;
 }
 
